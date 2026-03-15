@@ -1,0 +1,36 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+development:
+  primary: &dev_primary
+    <<: *default
+    url: <%= ENV.fetch("DATABASE_URL", "postgresql://postgres:password@db:5432/app_development") %>
+  cache:
+    <<: *dev_primary
+    database_tasks: false
+  queue:
+    <<: *dev_primary
+    database_tasks: false
+  cable:
+    <<: *dev_primary
+    database_tasks: false
+
+test:
+  <<: *default
+  url: <%= ENV.fetch("DATABASE_URL", "postgresql://postgres:password@localhost:5432/app_test") %>
+
+production:
+  primary: &production_primary
+    <<: *default
+    url: <%= ENV.fetch("DATABASE_URL") %>
+  cache:
+    <<: *production_primary
+    database_tasks: false
+  queue:
+    <<: *production_primary
+    database_tasks: false
+  cable:
+    <<: *production_primary
+    database_tasks: false

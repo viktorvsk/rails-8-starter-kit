@@ -1,0 +1,18 @@
+#!/bin/bash -e
+
+./bin/rails db:create 2>/dev/null || true
+
+./bin/rails runner "
+  conn = ActiveRecord::Base.connection
+  unless conn.table_exists?('solid_queue_jobs')
+    load Rails.root.join('db/queue_schema.rb')
+  end
+  unless conn.table_exists?('solid_cache_entries')
+    load Rails.root.join('db/cache_schema.rb')
+  end
+  unless conn.table_exists?('solid_cable_messages')
+    load Rails.root.join('db/cable_schema.rb')
+  end
+"
+
+exec "${@}"
