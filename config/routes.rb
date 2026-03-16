@@ -3,5 +3,11 @@ Rails.application.routes.draw do
 
   mount MissionControl::Jobs::Engine, at: "/jobs"
 
-  root "home#index"
+  resources :todos, only: [ :index, :create, :edit, :update, :destroy ] do
+    member do
+      patch :toggle
+    end
+  end
+
+  root "todos#index"
 end

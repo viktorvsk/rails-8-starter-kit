@@ -1,0 +1,16 @@
+<%= form_with model: todo, id: "todo_form", class: "todo-form" do |f| %>
+  <% if todo.errors.any? %>
+    <div class="error-messages">
+      <% todo.errors.full_messages.each do |msg| %>
+        <p><%= msg %></p>
+      <% end %>
+    </div>
+  <% end %>
+  <div class="form-row">
+    <%= f.text_field :title, placeholder: "What needs to be done?", autofocus: true, class: "todo-input", autocomplete: "off" %>
+    <%= f.submit todo.new_record? ? "Add" : "Save", class: "btn btn-primary" %>
+    <% unless todo.new_record? %>
+      <%= link_to "Cancel", todos_path, class: "btn btn-secondary" %>
+    <% end %>
+  </div>
+<% end %>

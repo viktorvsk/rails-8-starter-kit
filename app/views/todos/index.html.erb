@@ -1,0 +1,13 @@
+<% content_for :title, "Todo App" %>
+
+<div class="container">
+  <h1>Todos</h1>
+
+  <div id="todo_form">
+    <%= render "form", todo: @todo %>
+  </div>
+
+  <ul id="todos" class="todo-list">
+    <%= render @todos %>
+  </ul>
+</div>
