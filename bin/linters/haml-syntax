@@ -1,0 +1,79 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "rubygems"
+require "bundler/setup"
+require "find"
+require "haml"
+
+error_count = 0
+warning_count = 0
+
+# Patterns that compile but produce wrong HTML in Haml 7.
+# e.g. `.text-base-content\\/60` creates class "text-base-content" with text "\/60"
+# instead of class "text-base-content/60".  Use {class: "..."} attribute hashes.
+SUSPECT_CLASS_PATTERNS = [
+  %r{^\s*[%.]\S*\\/}, # escaped slash in dot-notation:  .foo\/bar
+  /^\s*[%.]\S*\\:/, # escaped colon in dot-notation:  .hover\:bg-red
+].freeze
+
+Find.find(File.expand_path("../../app/views", __dir__)) do |path|
+  next unless path.end_with?(".haml")
+
+  source = File.read(path)
+
+  # --- Errors ---
+  begin
+    compiled = Haml::Engine.new.call(source)
+    # Check for Ruby syntax errors in the compiled code
+    # Wrapping in a `def` so `yield` and `return` in templates don't trigger syntax errors.
+    RubyVM::InstructionSequence.compile("def _haml_compilation_test\n#{compiled}\nend\n")
+  rescue Haml::SyntaxError => e
+    $stderr.puts "\nFile: #{path}"
+    $stderr.puts e.message
+    error_count += 1
+    next
+  rescue SyntaxError => e
+    $stderr.puts "\nFile: #{path}"
+    $stderr.puts "Ruby syntax error in compiled Haml:"
+    $stderr.puts e.message
+    error_count += 1
+    next
+  end
+
+  # Haml 7 defers certain errors (e.g. illegal nesting) into the compiled
+  # Ruby source as `raise Haml::SyntaxError.new(...)` instead of failing at
+  # parse time.  Detect those deferred errors by scanning the output.
+  if compiled.include?("Haml::SyntaxError")
+    if (match = compiled.match(/Haml::SyntaxError\.new\(%q\[(.+?)\]/))
+      message = match[1]
+    end
+    if (line_match = compiled.match(/Haml::SyntaxError\.new\(%q\[.+?\],\s*(\d+)\)/))
+      line = line_match[1]
+    end
+
+    $stderr.puts "\nFile: #{path}#{line ? ":#{line}" : ""}"
+    $stderr.puts message || "Deferred Haml::SyntaxError detected in compiled output"
+    error_count += 1
+  end
+
+  # --- Recommendations ---
+  # Detect escaped class patterns that compile but produce incorrect HTML.
+  source.each_line.with_index(1) do |line, lineno|
+    SUSPECT_CLASS_PATTERNS.each do |pattern|
+      next unless line.match?(pattern)
+
+      $stderr.puts "\n[warning] File: #{path}:#{lineno}"
+      $stderr.puts "  Escaped class in dot-notation produces incorrect HTML in Haml 7."
+      $stderr.puts "  Use {class: \"...\"} attribute hash instead."
+      $stderr.puts "  > #{line.strip}"
+      warning_count += 1
+    end
+  end
+end
+
+if warning_count > 0
+  $stderr.puts "\n#{warning_count} warning(s) found (do not cause build failure)"
+end
+
+exit(error_count.zero? ? 0 : 1)

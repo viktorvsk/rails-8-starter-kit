@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+# N+1 query linter — runs ALL specs via parallel_rspec for speed.
+# Uses SIMPLECOV_PREFIX so SimpleCov generates unique command names per worker
+# (spec_helper.rb builds "nplus1-{TEST_ENV_NUMBER}").
+#
+# Exit code reflects ONLY N+1 failures (via marker file), not other test failures.
+
+export NPLUS1_CHECK=1
+export SILENT_TESTS=${SILENT_TESTS:-1}
+export RSPEC_RETRY_NUMBER=${RSPEC_RETRY_NUMBER:-3}
+export COVERAGE_FORMAT=${COVERAGE_FORMAT:-json}
+export SIMPLECOV_PREFIX="nplus1"
+
+NPLUS1_MARKER="/tmp/nplus1_detected"
+NPLUS1_REPORT="/tmp/nplus1_report.txt"
+rm -f "$NPLUS1_MARKER" "$NPLUS1_REPORT"
+export NPLUS1_MARKER_FILE="$NPLUS1_MARKER"
+export NPLUS1_REPORT_FILE="$NPLUS1_REPORT"
+
+NPLUS1_FORMATTER="--require ./spec/support/nplus1_formatter.rb --format progress --format Nplus1Formatter"
+
+printf "▶ nplus1: scanning all specs in parallel\n"
+bundle exec parallel_rspec --serialize-stdout \
+  --test-options "-f progress -f failures $NPLUS1_FORMATTER" \
+  spec || true
+
+# Exit based on N+1 detection only, not other test failures
+if [ -f "$NPLUS1_MARKER" ]; then
+  echo "❌ FAILED: N+1 queries detected"
+  [ -f "$NPLUS1_REPORT" ] && cat "$NPLUS1_REPORT"
+  exit 1
+fi
+
+echo "✅ SUCCESS: No N+1 queries detected"
+
+exit 0

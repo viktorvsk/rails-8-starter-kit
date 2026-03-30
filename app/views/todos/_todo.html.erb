@@ -1,0 +1,10 @@
+<li id="<%= dom_id(todo) %>" class="todo-item <%= todo.completed? ? 'completed' : '' %>">
+  <%= button_to toggle_todo_path(todo), method: :patch, class: "toggle-btn", "data-turbo-stream": true do %>
+    <span class="checkbox"><%= todo.completed? ? "✓" : "" %></span>
+  <% end %>
+  <span class="todo-title"><%= todo.title %></span>
+  <div class="todo-actions">
+    <%= link_to "Edit", edit_todo_path(todo), class: "btn btn-sm" %>
+    <%= button_to "Delete", todo_path(todo), method: :delete, class: "btn btn-sm btn-danger", "data-turbo-confirm": "Delete this todo?", "data-turbo-stream": true %>
+  </div>
+</li>

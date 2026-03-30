@@ -1,0 +1,227 @@
+x-fibe.gg:
+  variables:
+    rails_master_key:
+      name: "Rails master key"
+      required: false
+    pgpassword:
+      name: "Postgres password"
+      required: true
+    subdomain:
+      name: "Subdomain"
+      required: true
+      default: "starter"
+    branch:
+      name: "Branch"
+      required: true
+      default: "main"
+
+services:
+  postgres:
+    image: postgres:17.5
+    shm_size: 1gb
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    configs:
+      - source: postgres_config
+        target: /etc/postgresql/postgresql.conf
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: $$random__pgpassword
+      POSTGRES_DB: starter_development
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d starter_development" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: $$random__pgpassword
+      POOL_MODE: transaction
+      ADMIN_USERS: postgres
+      AUTH_TYPE: scram-sha-256
+      IGNORE_STARTUP_PARAMETERS: extra_float_digits
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  localstack:
+    image: localstack/localstack:4.13.1
+    environment:
+      - SERVICES=s3
+      - DEBUG=0
+    volumes:
+      - "localstack_data:/var/lib/localstack"
+    ports:
+      - "4566:4566"
+
+  redis:
+    image: redis:8.4-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ws:
+    image: anycable/anycable-go:1.6
+    environment:
+      ANYCABLE_HOST: 0.0.0.0
+      ANYCABLE_PORT: 8081
+      ANYCABLE_DEBUG: 0
+      ANYCABLE_RPC_HOST: http://app:3000/_anycable
+      ANYCABLE_BROADCAST_ADAPTER: redis
+      REDIS_URL: redis://redis:6379/1
+      ANYCABLE_DISABLE_TELEMETRY: true
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+
+  setup:
+    image: rails-8-starter-kit-dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_started
+      pgbouncer:
+        condition: service_started
+    volumes:
+      - .:/rails
+      - storage:/rails/storage
+      - /rails/tmp/cache
+    command: bin/setup --skip-server
+    environment:
+      RAILS_ENV: development
+      RAILS_MASTER_KEY: $$var__rails_master_key
+      DB_PASS: $$random__pgpassword
+      DB_HOST: postgres
+      DB_DIRECT_HOST: postgres
+      DB_DIRECT_PORT: "5432"
+      REDIS_URL: redis://redis:6379/1
+
+  tests:
+    image: rails-8-starter-kit-dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_started
+      pgbouncer:
+        condition: service_started
+    volumes:
+      - .:/rails
+      - storage:/rails/storage
+      - /rails/tmp/cache
+    command: bash -c "bin/setup --skip-server && bin/check-fast"
+    environment:
+      RAILS_ENV: test
+      RAILS_MASTER_KEY: $$var__rails_master_key
+      DB_PASS: $$random__pgpassword
+      DB_HOST: postgres
+      DB_DIRECT_HOST: postgres
+      DB_DIRECT_PORT: "5432"
+      REDIS_URL: redis://redis:6379/1
+
+  app:
+    image: rails-8-starter-kit-dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    depends_on:
+      tests:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_started
+      pgbouncer:
+        condition: service_started
+    volumes:
+      - .:/rails
+      - storage:/rails/storage
+      - /rails/tmp/cache
+    ports:
+      - "3000:3000"
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+    command: bin/dev
+    environment:
+      RAILS_ENV: development
+      RAILS_MASTER_KEY: $$var__rails_master_key
+      DB_PASS: $$random__pgpassword
+      DB_HOST: pgbouncer
+      DB_DIRECT_HOST: postgres
+      DB_DIRECT_PORT: "5432"
+      REDIS_URL: redis://redis:6379/1
+    labels:
+      fibe.gg/github_url: "https://github.com/viktorvsk/rails-8-starter-kit"
+      fibe.gg/expose: "external:3000"
+      fibe.gg/dockerfile: "Dockerfile.dev"
+      fibe.gg/branch: $$var__branch
+      fibe.gg/source_mount: /rails
+      fibe.gg/env_file: env.example
+      fibe.gg/subdomain: "$$var__subdomain"
+      fibe.gg/zerodowntime: "false"
+
+volumes:
+  postgres_data:
+  localstack_data:
+  redis_data:
+  storage:
+
+configs:
+  postgres_config:
+    content: |
+      listen_addresses = '*'
+      shared_buffers = 1GB
+      effective_cache_size = 3GB
+      maintenance_work_mem = 256MB
+      checkpoint_completion_target = 0.9
+      wal_buffers = 16MB
+      default_statistics_target = 100
+      random_page_cost = 1.1
+      effective_io_concurrency = 200
+      work_mem = 10MB
+      min_wal_size = 1GB
+      max_wal_size = 4GB
+      max_worker_processes = 2
+      max_parallel_workers_per_gather = 1
+      max_parallel_workers = 2
+      max_parallel_maintenance_workers = 1

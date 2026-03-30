@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rails 8 Starter Kit — Build Status</title>
+  <meta name="description" content="Live build status and architecture overview for the Rails 8 Starter Kit.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-from: #0f0f14;
+      --bg-via: #1a1625;
+      --bg-to: #0f0f14;
+      --glass-bg: rgba(255, 255, 255, 0.04);
+      --glass-border: rgba(167, 139, 250, 0.15);
+      --accent: #a78bfa;
+      --accent-glow: rgba(167, 139, 250, 0.3);
+      --text-primary: #e5e7eb;
+      --text-muted: rgba(229, 231, 235, 0.5);
+    }
+    html, body { height: 100%; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(135deg, var(--bg-from), var(--bg-via), var(--bg-to));
+      background-size: 400% 400%;
+      animation: gradientShift 12s ease infinite;
+      position: relative;
+      overflow-x: hidden;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+      color: var(--text-primary);
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      top: -100px;
+      right: -100px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+      bottom: -80px;
+      left: -80px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    /* Navbar */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(15, 15, 20, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(167, 139, 250, 0.1);
+      padding: 0 1.5rem;
+    }
+    .navbar__inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      height: 56px;
+      gap: 1rem;
+    }
+    .navbar__brand {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-primary);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: -0.3px;
+      flex-shrink: 0;
+      transition: color 0.2s ease;
+    }
+    .navbar__brand:hover { color: var(--accent); }
+    .navbar__logo {
+      width: 22px;
+      height: 22px;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+    .navbar__links {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      margin-left: auto;
+    }
+    .navbar__link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 500;
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+      transition: color 0.2s ease, background 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .navbar__link:hover {
+      color: var(--text-primary);
+      background: rgba(167, 139, 250, 0.08);
+    }
+
+    /* Footer */
+    .footer {
+      position: relative;
+      z-index: 1;
+      background: rgba(15, 15, 20, 0.9);
+      border-top: 1px solid rgba(167, 139, 250, 0.1);
+      padding: 2rem 1.5rem 1.5rem;
+      margin-top: auto;
+    }
+    .footer__inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .footer__links {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.78rem;
+    }
+    .footer__links a {
+      color: rgba(229, 231, 235, 0.3);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    .footer__links a:hover { color: var(--accent); }
+    .footer__sep { color: rgba(229, 231, 235, 0.15); }
+    .footer__copy {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.2);
+      letter-spacing: 0.5px;
+    }
+
+    /* Main */
+    .main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .viewer {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      gap: 2rem;
+      align-items: stretch;
+    }
+
+    @media (max-width: 768px) {
+      .viewer { flex-direction: column; }
+      .sidebar { width: 100% !important; }
+    }
+
+    .sidebar {
+      width: 280px;
+      flex-shrink: 0;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 1.5rem;
+      position: relative;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      height: fit-content;
+    }
+
+    .sidebar-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--glass-border);
+      letter-spacing: -0.3px;
+    }
+
+    .section-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .section-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      padding: 0.6rem 1rem;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: block;
+      line-height: 1.4;
+      border: 1px solid transparent;
+    }
+    .section-link:hover {
+      color: var(--text-primary);
+      background: rgba(167, 139, 250, 0.08);
+      border-color: rgba(167, 139, 250, 0.1);
+    }
+    .section-link.active {
+      color: var(--text-primary);
+      background: rgba(167, 139, 250, 0.15);
+      border-color: rgba(167, 139, 250, 0.3);
+      font-weight: 500;
+    }
+
+    .content-area {
+      flex: 1;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 2.5rem 3rem;
+      position: relative;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      min-width: 0;
+      min-height: 400px;
+    }
+
+    /* Markdown */
+    .md { color: var(--text-primary); font-size: 1rem; line-height: 1.7; }
+    .md h1, .md h2, .md h3, .md h4 { color: #fff; margin-top: 2rem; margin-bottom: 1rem; font-weight: 600; line-height: 1.3; letter-spacing: -0.5px; }
+    .md h1 { font-size: 2.2rem; color: var(--accent); margin-top: 0; padding-bottom: 1rem; border-bottom: 1px solid var(--glass-border); }
+    .md h2 { font-size: 1.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .md p { margin-bottom: 1.25rem; color: var(--text-muted); }
+    .md p:last-child { margin-bottom: 0; }
+    .md strong { color: #fff; font-weight: 600; }
+    .md em { color: rgba(255,255,255,0.8); }
+    .md ul, .md ol { margin-bottom: 1.25rem; padding-left: 1.5rem; color: var(--text-muted); }
+    .md li { margin-bottom: 0.5rem; }
+    .md code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85em; background: rgba(0, 0, 0, 0.3); padding: 0.2em 0.4em; border-radius: 6px; color: #fbbf24; border: 1px solid rgba(255, 255, 255, 0.05); }
+    .md pre { background: rgba(0, 0, 0, 0.4); padding: 1.25rem; border-radius: 12px; overflow-x: auto; margin-bottom: 1.5rem; border: 1px solid rgba(255, 255, 255, 0.05); }
+    .md pre code { background: transparent; padding: 0; border: none; color: var(--text-primary); font-size: 0.9em; }
+    .md blockquote { border-left: 3px solid var(--accent); padding: 1rem; margin: 1.5rem 0; color: rgba(255,255,255,0.6); font-style: italic; background: rgba(167, 139, 250, 0.05); border-radius: 0 8px 8px 0; }
+    .md a { color: var(--accent); text-decoration: none; border-bottom: 1px dashed rgba(167, 139, 250, 0.5); transition: all 0.2s; }
+    .md a:hover { color: #fff; border-color: #fff; }
+    .md table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+    .md th { text-align: left; padding: 0.75rem 1rem; border-bottom: 2px solid var(--glass-border); color: var(--accent); font-weight: 600; font-size: 0.9rem; }
+    .md td { padding: 0.6rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-muted); font-size: 0.95rem; }
+    .md tr:hover td { background: rgba(167, 139, 250, 0.04); }
+
+    .empty-state {
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; height: 100%; color: var(--text-muted); text-align: center;
+    }
+    .empty-state-icon { margin-bottom: 1rem; color: var(--glass-border); }
+
+    /* Badge */
+    .badge {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.25rem 0.6rem; border-radius: 6px;
+      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.3px;
+    }
+    .badge-green { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; }
+    .badge-blue { background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); color: #93c5fd; }
+    .badge-violet { background: rgba(167, 139, 250, 0.15); border: 1px solid rgba(167, 139, 250, 0.3); color: #c4b5fd; }
+    .badge-amber { background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.3); color: #fbbf24; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="navbar__inner">
+      <a class="navbar__brand" href="https://github.com/viktorvsk/rails-8-starter-kit">
+        <svg class="navbar__logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+          <path d="M2 17l10 5 10-5"></path>
+          <path d="M2 12l10 5 10-5"></path>
+        </svg>
+        Rails 8 Starter Kit
+      </a>
+      <div class="navbar__links">
+        <a class="navbar__link" href="https://github.com/viktorvsk/rails-8-starter-kit">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path>
+          </svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="viewer">
+      <aside class="sidebar">
+        <h3 class="sidebar-title">Documentation</h3>
+        <ul class="section-list" id="section-list">
+          <!-- Populated by JS -->
+        </ul>
+      </aside>
+
+      <section class="content-area">
+        <div id="content" class="md">
+          <div class="empty-state">
+            <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <h3>Select a Section</h3>
+            <p>Choose a topic from the sidebar to explore the starter kit.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__inner">
+      <div class="footer__links">
+        <a href="https://github.com/viktorvsk/rails-8-starter-kit">Source Code</a>
+        <span class="footer__sep">·</span>
+        <a href="https://github.com/viktorvsk/rails-8-starter-kit/issues">Issues</a>
+        <span class="footer__sep">·</span>
+        <a href="https://github.com/viktorvsk/rails-8-starter-kit/actions">CI Status</a>
+      </div>
+      <div class="footer__copy">Rails 8 Starter Kit — MIT License</div>
+    </div>
+  </footer>
+
+  <script>
+    const sections = {
+      'overview': {
+        title: 'Overview',
+        content: `# Rails 8 Starter Kit
+
+A **production-grade, AI-native** fullstack starter kit for Rails 8.
+
+Zero-config Docker. Parallel tests. Real-time WebSockets. Premium dark UI.
+
+\`\`\`bash
+docker compose up
+\`\`\`
+
+That's it. The \`setup\` container creates your database, seeds data, and the \`tests\` container validates everything — all before your app boots.
+
+## Stack at a Glance
+
+| Layer | Technology |
+|---|---|
+| **Framework** | Rails 8.1 + Ruby 4.0 |
+| **Frontend** | Hotwire + Tailwind v4 + DaisyUI |
+| **Real-time** | AnyCable-Go + Turbo Streams |
+| **Database** | PostgreSQL 17.5 + PgBouncer |
+| **Jobs** | Sidekiq + Sidekiq-Cron |
+| **Storage** | Active Storage + LocalStack (S3) |
+| **3D** | Three.js via importmap |
+| **Testing** | RSpec + Capybara + Parallel Tests |
+| **Quality** | 8 linters running in parallel |
+| **Deploy** | Kamal + Thruster + Multi-stage Docker |`
+      },
+      'architecture': {
+        title: 'Architecture',
+        content: `# Architecture
+
+## Service Topology
+
+\`\`\`
+Browser ◄──► Puma :3000 ◄──► PostgreSQL + PgBouncer
+   │              │
+   │ WebSocket    │ Pub/Sub
+   ▼              ▼
+AnyCable-Go  ◄──► Redis ◄──► Sidekiq
+   :8081                        │
+                           LocalStack (S3)
+                              :4566
+\`\`\`
+
+## Docker Compose Pipeline
+
+The startup is a sequential gate system:
+
+1. **Infrastructure** — Postgres, Redis, LocalStack, PgBouncer start first
+2. **setup** — Creates databases, runs migrations, seeds demo data
+3. **tests** — Runs 8 linters + parallel RSpec (blocks if anything fails)
+4. **app** — Only boots after tests pass
+5. **ws** — AnyCable-Go WebSocket server (independent)
+
+## Key Design Decisions
+
+- **AnyCable over Action Cable** — Go process handles WebSockets, Ruby stays free
+- **PgBouncer** — Transaction-mode pooling. Setup/tests bypass it for \`CREATE DATABASE\`
+- **Sidekiq over Solid Queue** — Battle-tested, web UI, cron scheduling built-in
+- **jemalloc** — 30-40% memory reduction via \`LD_PRELOAD\`
+- **Bootsnap isolation** — Anonymous Docker volumes prevent cache corruption on macOS`
+      },
+      'testing': {
+        title: 'Testing',
+        content: `# Testing Infrastructure
+
+## Parallel Execution
+
+Tests run across **all available CPU cores** via \`parallel_tests\`:
+
+\`\`\`bash
+bin/prspec                     # parallel specs
+bin/check-fast                 # 8 linters + specs in parallel
+bin/check --parallel=rubocop,rspec --then=brakeman
+\`\`\`
+
+## Code Quality Gates
+
+| Linter | Purpose |
+|---|---|
+| \`rubocop\` | Shopify style enforcement |
+| \`brakeman\` | Static security analysis |
+| \`bundler-audit\` | CVE scanning |
+| \`reek\` | Code smell detection |
+| \`flog\` | Complexity scoring |
+| \`flay\` | Duplication detection |
+| \`haml-syntax\` | Template validation |
+| \`rspec\` | Unit + system specs |
+
+## Browser Testing
+
+Capybara + headless Chromium with auto-detection:
+- **Docker**: \`/usr/bin/chromium\` (pre-installed)
+- **macOS**: Selenium Manager finds native Chrome
+- **Test env**: CSS animations/transitions disabled automatically`
+      },
+      'docker': {
+        title: 'Docker Services',
+        content: `# Docker Compose Services
+
+| Service | Image | Port | Role |
+|---|---|---|---|
+| \`postgres\` | postgres:17.5 | 5432 | Tuned primary database |
+| \`pgbouncer\` | edoburu/pgbouncer | — | Connection pooling |
+| \`redis\` | redis:8.4-alpine | 6379 | Pub/sub + cache |
+| \`localstack\` | localstack:4.13.1 | 4566 | S3 emulation |
+| \`ws\` | anycable-go:1.6 | 8081 | WebSocket server |
+| \`setup\` | (app image) | — | DB + migrations + seeds |
+| \`tests\` | (app image) | — | Linters + specs gate |
+| \`app\` | (app image) | 3000 | Rails app server |
+
+> All three app-derived containers share a **single Docker image** to prevent redundant builds.
+
+## Usage
+
+\`\`\`bash
+docker compose up              # full pipeline
+docker compose run --rm tests  # tests only
+docker compose up app ws       # skip tests gate
+\`\`\``
+      },
+      'demo-content': {
+        title: 'Demo Content',
+        content: `# Demo Content
+
+> ⚠️ The following exist for **demonstration only**. Delete them when starting a real application.
+
+| Component | Files | Shows |
+|---|---|---|
+| **Todo CRUD** | \`todo.rb\`, \`todos_controller.rb\`, \`todos/\` views | Full MVC + Turbo Frames |
+| **Turbo Streams** | \`after_create_commit\` callback | Real-time broadcasting |
+| **Stimulus** | \`hello_controller.js\` | Basic JS controller wiring |
+| **Three.js** | \`importmap.rb\` pin | Importmap library usage |
+| **Seed data** | \`seeds.rb\` | Idempotent seeding pattern |
+| **System spec** | \`todos_spec.rb\` | Capybara E2E testing |
+| **Home page** | \`home_controller.rb\` | Static page routing |
+| **Recurring job** | \`example_recurring_job.rb\` | Sidekiq-Cron pattern |`
+      },
+      'ai-agents': {
+        title: 'For AI Agents',
+        content: `# For AI Agents
+
+This repository is optimized for **LLM-assisted development**:
+
+- **Deterministic setup** — \`docker compose up\` produces identical environments
+- **Fast feedback** — \`bin/check-fast\` validates all changes in seconds
+- **Clear conventions** — Shopify Ruby style, RSpec, Stimulus naming
+- **Minimal surface area** — one model, one controller, flat config
+- **No magic** — explicit imports, no metaprogramming in app code
+
+## Where to Start
+
+1. \`config/routes.rb\` — all URL routes
+2. \`Gemfile\` — all Ruby dependencies
+3. \`docker-compose.yml\` — full infrastructure definition
+4. \`bin/check-fast\` — validation pipeline
+5. \`config/database.yml\` — database configuration (env-driven)
+
+## Adding a New Feature
+
+1. Generate model/controller with \`bin/rails generate\`
+2. Write specs in \`spec/\`
+3. Run \`bin/check-fast\` to validate
+4. Commit — CI will run the same checks
+
+## Key Files for Context
+
+| File | Purpose |
+|---|---|
+| \`config/application.rb\` | Framework config, module name (\`Starter\`) |
+| \`config/cable.yml\` | AnyCable adapter selection |
+| \`config/recurring.yml\` | Sidekiq-Cron job schedules |
+| \`.rubocop.yml\` | Linting rules (Shopify base) |
+| \`.reek.yml\` | Code smell thresholds |
+| \`Procfile.dev\` | Local dev process manager |`
+      }
+    };
+
+    const sectionListEl = document.getElementById('section-list');
+    const contentEl = document.getElementById('content');
+
+    marked.setOptions({ gfm: true, breaks: true });
+
+    function loadSection(key) {
+      document.querySelectorAll('.section-link').forEach(link => {
+        link.classList.toggle('active', link.dataset.key === key);
+      });
+
+      const section = sections[key];
+      if (!section) return;
+
+      let html = marked.parse(section.content);
+      contentEl.innerHTML = html;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      history.replaceState(null, null, '#' + key);
+      document.title = section.title + ' — Rails 8 Starter Kit';
+    }
+
+    // Populate sidebar
+    Object.entries(sections).forEach(([key, section]) => {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.className = 'section-link';
+      a.dataset.key = key;
+      a.textContent = section.title;
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        loadSection(key);
+      });
+      li.appendChild(a);
+      sectionListEl.appendChild(li);
+    });
+
+    // Handle initial hash
+    const hash = window.location.hash.slice(1);
+    if (hash && sections[hash]) {
+      loadSection(hash);
+    } else {
+      loadSection('overview');
+    }
+  </script>
+
+</body>
+</html>

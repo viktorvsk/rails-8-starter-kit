@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f0f14">
+    <title>Connection Lost</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-from: #0f0f14;
+            --bg-via: #1a1625;
+            --bg-to: #0f0f14;
+            --glass-bg: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(167, 139, 250, 0.15);
+            --accent: #a78bfa;
+            --accent-glow: rgba(167, 139, 250, 0.3);
+            --text-primary: #e5e7eb;
+            --text-muted: rgba(229, 231, 235, 0.5);
+        }
+
+        html, body {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--bg-from), var(--bg-via), var(--bg-to));
+            background-size: 400% 400%;
+            animation: gradientShift 12s ease infinite;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            top: -100px;
+            right: -100px;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes floatUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes orbit {
+            from { transform: rotate(0deg) translateX(60px) rotate(0deg); }
+            to { transform: rotate(360deg) translateX(60px) rotate(-360deg); }
+        }
+
+        .card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 3rem 2.5rem;
+            max-width: 520px;
+            width: 100%;
+            text-align: center;
+            animation: floatUp 0.6s ease-out forwards;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        .icon-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1.5rem;
+        }
+
+        .icon-wrap::before {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: orbit 3s linear infinite;
+            opacity: 0.7;
+        }
+
+        .icon-emoji { font-size: 3rem; line-height: 1; }
+
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #ef4444;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            animation: pulse 2s ease-in-out infinite;
+            vertical-align: middle;
+        }
+
+        .status-dot.connected { background: #22c55e; animation: none; }
+
+        .status-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+
+        .divider {
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            margin: 1.25rem auto;
+            border-radius: 2px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+            margin-bottom: 0.75rem;
+        }
+
+        p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            line-height: 1.65;
+            max-width: 380px;
+            margin: 0 auto;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.75rem;
+            background: linear-gradient(135deg, rgba(167, 139, 250, 0.2), rgba(139, 92, 246, 0.2));
+            border: 1px solid rgba(167, 139, 250, 0.35);
+            border-radius: 100px;
+            color: var(--accent);
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .back-btn:hover {
+            background: linear-gradient(135deg, rgba(167, 139, 250, 0.35), rgba(139, 92, 246, 0.35));
+            border-color: rgba(167, 139, 250, 0.6);
+            transform: translateY(-1px);
+        }
+
+        .back-btn .spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        .back-btn.loading .spinner { display: inline-block; }
+        .back-btn.loading .btn-label { display: none; }
+
+        .countdown {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 1.25rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="icon-wrap"><span class="icon-emoji">📡</span></div>
+        <div class="status-label">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText">Disconnected</span>
+        </div>
+        <div class="divider"></div>
+        <h1>Connection Lost</h1>
+        <p>The server is temporarily unreachable. This could be a brief deployment or a network hiccup — we'll keep trying.</p>
+        <div class="actions">
+            <button class="back-btn" id="retryBtn" onclick="retryNow()">
+                <span class="spinner"></span><span class="btn-label">↻ Retry Now</span>
+            </button>
+            <a class="back-btn" onclick="history.back()">← Go back</a>
+        </div>
+        <div class="countdown" id="countdown">Auto-retry in <strong id="timer">10</strong>s</div>
+    </div>
+
+    <script>
+        let seconds = 10;
+        const timerEl = document.getElementById('timer');
+        const retryBtn = document.getElementById('retryBtn');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+
+        function retryNow() {
+            retryBtn.classList.add('loading');
+            fetch(window.location.href, { method: 'HEAD', cache: 'no-store' })
+                .then((res) => {
+                    if (res.ok || res.status === 304) {
+                        statusDot.classList.add('connected');
+                        statusText.textContent = 'Reconnected';
+                        window.location.reload();
+                    } else {
+                        retryFailed();
+                    }
+                })
+                .catch(() => retryFailed());
+        }
+
+        function retryFailed() {
+            retryBtn.classList.remove('loading');
+            seconds = 10;
+            timerEl.textContent = seconds;
+        }
+
+        setInterval(() => {
+            seconds--;
+            if (seconds <= 0) {
+                retryNow();
+                return;
+            }
+            timerEl.textContent = seconds;
+        }, 1000);
+    </script>
+</body>
+</html>

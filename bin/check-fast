@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Fast linting mode (replaces bin/lint)
+exec ./bin/check --parallel=rspec,flog,flay,rubocop,brakeman,bundler-audit,reek,haml-syntax

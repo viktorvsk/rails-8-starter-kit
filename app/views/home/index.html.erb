@@ -1,0 +1,24 @@
+<div style="font-family: system-ui, sans-serif; max-width: 640px; margin: 60px auto; padding: 0 20px;">
+  <h1>Rails 8 Starter Kit</h1>
+  <p>Rails <%= Rails.version %> &middot; Ruby <%= RUBY_VERSION %></p>
+
+  <ul>
+    <li><a href="/up">Health check</a></li>
+    <li><a href="/jobs">Mission Control &mdash; Jobs dashboard</a></li>
+  </ul>
+
+  <h2>Stack</h2>
+  <ul>
+    <li>PostgreSQL via pg</li>
+    <li>Solid Queue &mdash; background jobs</li>
+    <li>Solid Cache &mdash; database-backed cache</li>
+    <li>Solid Cable &mdash; Action Cable adapter</li>
+    <li>Mission Control Jobs &mdash; jobs dashboard</li>
+  </ul>
+
+  <h2>Processes (<code>bin/dev</code>)</h2>
+  <ul>
+    <li><code>web</code> &mdash; Puma web server</li>
+    <li><code>worker</code> &mdash; Solid Queue worker + recurring jobs dispatcher</li>
+  </ul>
+</div>

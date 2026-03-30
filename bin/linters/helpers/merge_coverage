@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Merges multiple SimpleCov result sets in .resultset.json into a single
+# combined entry. This is necessary because Skunk (via RubyCritic) reads
+# only the FIRST entry from the resultset, missing coverage data from
+# other parallel test groups.
+# It also synchronously formats the final coverage to avoid parallel test
+# race conditions corrupting coverage/coverage.json
+
+require "simplecov"
+require "json"
+
+RESULTSET_PATH = File.expand_path("../../..", __dir__) + "/coverage/.resultset.json"
+
+unless File.exist?(RESULTSET_PATH)
+  warn "[merge_coverage] No .resultset.json found"
+  exit 0
+end
+
+data = JSON.parse(File.read(RESULTSET_PATH))
+suite_count = data.keys.reject { |k| k == "merged" || k.include?(",") }.size
+
+# Run standard collation which generates coverage/coverage.json perfectly
+SimpleCov.collate(Dir[RESULTSET_PATH], "rails") do
+  add_filter "/spec/"
+  add_filter "/config/"
+  add_filter "/vendor/"
+
+  add_group "Channels", "app/channels"
+  add_group "Controllers", "app/controllers"
+  add_group "Models", "app/models"
+  add_group "MCP Tools", "app/mcp"
+  add_group "Helpers", "app/helpers"
+  add_group "Jobs", "app/jobs"
+  add_group "Services", "app/services"
+
+  if ENV["COVERAGE_FORMAT"] == "json"
+    require "simplecov_json_formatter"
+    formatter SimpleCov::Formatter::JSONFormatter
+  else
+    formatter SimpleCov::Formatter::HTMLFormatter
+  end
+end
+
+# Now clean up .resultset.json so that Skunk parses it correctly.
+# SimpleCov.collate joined all command names into a single massive key.
+# We extract that largest merged value, and rewrite .resultset.json with ONLY "merged"
+new_data = JSON.parse(File.read(RESULTSET_PATH))
+# Find the collated key (it will contain commas since it joined multiple suite names, or it will be the most recently touched)
+merged_payload = new_data.values.max_by { |v| v["timestamp"].to_i }
+
+File.write(RESULTSET_PATH, JSON.generate({ "merged" => merged_payload }))
+
+puts "[merge_coverage] Merged #{suite_count > 0 ? suite_count : 1} suites into single entry"

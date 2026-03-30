@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+MAX_AVERAGE_SCORE=${MAX_SKUNK_AVG_SCORE:-600}
+MAX_FILE_SCORE=${MAX_SKUNK_FILE_SCORE:-1500}
+
+OUTPUT=$(if [ $# -eq 0 ]; then bundle exec skunk app lib 2>&1; else bundle exec skunk "$@" 2>&1; fi)
+EXIT_CODE=$?
+echo "$OUTPUT"
+
+if [ $EXIT_CODE -ne 0 ]; then
+  exit $EXIT_CODE
+fi
+
+AVERAGE=$(echo "$OUTPUT" | grep "SkunkScore Average:" | sed 's/.*Average: *//' | awk '{print $1}')
+WORST_LINE=$(echo "$OUTPUT" | grep "Worst SkunkScore:")
+WORST=$(echo "$WORST_LINE" | sed 's/.*SkunkScore: *//' | awk '{print $1}')
+
+if [ -z "$AVERAGE" ] || [ -z "$WORST" ]; then
+  echo "⚠️  Could not parse SkunkScore values"
+  exit 1
+fi
+
+FAILED=0
+
+if awk "BEGIN {exit !($AVERAGE > $MAX_AVERAGE_SCORE)}"; then
+  echo "❌ SkunkScore Average ($AVERAGE) exceeds threshold ($MAX_AVERAGE_SCORE)"
+  FAILED=1
+fi
+
+if awk "BEGIN {exit !($WORST > $MAX_FILE_SCORE)}"; then
+  echo "❌ Worst SkunkScore ($WORST) exceeds threshold ($MAX_FILE_SCORE)"
+  FAILED=1
+fi
+
+if [ $FAILED -eq 0 ]; then
+  echo "✅ SkunkScore within thresholds (avg: $AVERAGE <= $MAX_AVERAGE_SCORE, worst: $WORST <= $MAX_FILE_SCORE)"
+fi
+
+exit $FAILED

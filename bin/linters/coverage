@@ -1,0 +1,76 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "json"
+
+MARKER_FILE = "coverage/coverage.json"
+
+unless File.exist?(MARKER_FILE)
+  puts "Coverage check failed: no coverage.json found."
+  puts "Please run `bin/linters/nplus1` or `bin/coverage` first to generate the report."
+  exit 1
+end
+
+begin
+  data = JSON.parse(File.read(MARKER_FILE))
+
+  unless data.key?("groups")
+    puts "Coverage check failed: 'groups' key not found in coverage.json format."
+    exit(1)
+  end
+
+  failed_groups = []
+
+  data["groups"].each do |group_name, group_data|
+    # Depending on SimpleCov format, it might be nested under `lines`
+    # Check both structured formats.
+    percent = group_data.dig("lines", "covered_percent") || group_data["covered_percent"]
+
+    if percent.nil?
+      puts "Coverage check failed: Could not determine covered_percent for group '#{group_name}'."
+      exit(1)
+    end
+
+    if percent < 100.0
+      failed_groups << { name: group_name, percent: percent }
+    end
+  end
+
+  if failed_groups.any?
+    puts "Coverage check failed: Not all groups have 100% coverage."
+    puts "The following groups need more tests:"
+    failed_groups.sort_by { |fg| fg[:name] }.each do |fg|
+      # Format percentage to 2 decimal places max
+      percent_str = fg[:percent] == fg[:percent].to_i ? fg[:percent].to_i : format("%.2f", fg[:percent])
+      puts " - #{fg[:name]}: #{percent_str}%"
+    end
+
+    if data["coverage"]
+      puts "\nUncovered lines:"
+      data["coverage"].each do |file, file_data|
+        next unless file_data["lines"]
+        next if file_data["lines"].compact.all? { |l| l.to_i > 0 }
+
+        lines = file_data["lines"]
+        missing_lines = []
+
+        lines.each_with_index do |visits, idx|
+          missing_lines << (idx + 1) if visits && visits.to_i == 0
+        end
+
+        if missing_lines.any?
+          relative_file = file.sub(%r{^#{Regexp.escape(Dir.pwd)}/}, "")
+          puts " - #{relative_file}: #{missing_lines.count} missing lines (#{missing_lines.join(", ")})"
+        end
+      end
+    end
+
+    exit(1)
+  end
+
+  puts "Coverage check passed: All groups have 100% coverage."
+  exit(0)
+rescue JSON::ParserError
+  puts "Coverage check failed: coverage.json is not valid JSON."
+  exit(1)
+end

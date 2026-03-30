@@ -1,0 +1,55 @@
+
+# Shopify Ruby styling
+inherit_gem:
+  rubocop-shopify: rubocop.yml
+
+plugins:
+
+  - rubocop-factory_bot
+  - rubocop-rails
+  - rubocop-rspec
+  - rubocop-rspec_rails
+  - rubocop-haml
+
+AllCops:
+  Exclude:
+    - 'app/javascript/**/*'
+    - 'node_modules/**/*'
+    - 'vendor/**/*'
+    - 'db/**/*'
+    - 'sorbet/**/*'
+    - 'agent-scripts/**/*'
+
+RSpec/MultipleExpectations:
+  Enabled: false
+RSpec/ExampleLength:
+  Enabled: false
+# Disable missing enable directive cop so our inline disables don't throw warnings
+Lint/MissingCopEnableDirective:
+  Enabled: false
+Naming/PredicatePrefix:
+  Enabled: false
+RSpec/ContextWording:
+  Enabled: false
+RSpec/InstanceVariable:
+  Enabled: false
+RSpec/IndexedLet:
+  Enabled: false
+RSpec/LetSetup:
+  Enabled: false
+RSpec/NamedSubject:
+  Enabled: false
+RSpec/DescribeMethod:
+  Enabled: false
+Metrics/ParameterLists:
+  Enabled: false
+RSpec/MultipleMemoizedHelpers:
+  Enabled: false
+Rails/UnknownEnv:
+  Enabled: false
+
+# Overwrite or add rules to create your own house style
+#
+# # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`
+# Layout/SpaceInsideArrayLiteralBrackets:
+#   Enabled: false

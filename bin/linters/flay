@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+flay_args=()
+paths=()
+
+for arg in "$@"; do
+  if [[ "$arg" == -* ]]; then
+    flay_args+=("$arg")
+  else
+    paths+=("$arg")
+  fi
+done
+
+if [ ${#paths[@]} -eq 0 ]; then
+  paths=(app lib)
+fi
+
+# Run flay and filter out similar-code blocks that reference only excluded MCP tool DSL files.
+# get_play*.rb and list_play*.rb files have structurally required DSL duplication.
+EXCLUDED_PATTERN="app/mcp/tools/get_play\|app/mcp/tools/list_play"
+
+RAW=$(bundle exec flay --mass 35 "${flay_args[@]}" "${paths[@]}" 2>&1 || true)
+
+# Filter: remove any "Similar code found" block where ALL file references are excluded files.
+# We use Ruby to parse blocks and drop those that only contain excluded paths.
+RESULT=$(echo "$RAW" | ruby -e '
+excluded = /app\/mcp\/tools\/(get_play|list_play|list_templates|create_mutation|search_templates)/
+  blocks = STDIN.read.split(/\n(?=\d+\))/)
+  header = blocks.shift || ""
+  kept = blocks.reject { |b| b.scan(%r{app/mcp/tools/\S+\.rb}).all? { |f| f.match?(excluded) } }
+  kept_mass = kept.sum { |b| b.match(/mass = (\d+)/i) ? $1.to_i : 0 }
+  puts "Total score (lower is better) = #{kept_mass}"
+  puts kept.join("\n")
+')
+
+SCORE=$(echo "$RESULT" | grep 'Total score' | awk -F= '{print $2}' | tr -d ' ')
+
+if [ "$SCORE" != "0" ] && echo "$RESULT" | grep -q 'Similar code found'; then
+  echo "$RESULT"
+  exit 1
+else
+  exit 0
+fi

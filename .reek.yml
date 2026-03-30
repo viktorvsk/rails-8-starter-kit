@@ -1,0 +1,53 @@
+
+---
+detectors:
+  DuplicateMethodCall:
+    enabled: false
+  LongParameterList:
+    enabled: false
+  TooManyStatements:
+    enabled: false
+  MissingSafeMethod:
+    enabled: false
+  TooManyMethods:
+    max_methods: 25
+  TooManyInstanceVariables:
+    enabled: false
+  ClassVariable:
+    enabled: false
+  TooManyConstants:
+    enabled: false
+  IrresponsibleModule:
+    enabled: false
+  UncommunicativeVariableName:
+    enabled: false
+  UncommunicativeMethodName:
+    enabled: false
+  UncommunicativeParameterName:
+    enabled: false
+  UtilityFunction:
+    enabled: true
+    exclude:
+      - ExampleRecurringJob
+  FeatureEnvy:
+    enabled: false
+  InstanceVariableAssumption:
+    enabled: true
+    exclude:
+      - TodosController
+  NilCheck:
+    enabled: true
+  BooleanParameter:
+    enabled: true
+
+
+exclude_paths:
+  - db/migrate
+  - db/seeds
+  - vendor
+  - config
+  - bin
+  - spec
+  - test
+  - tmp
+  - lib/tasks

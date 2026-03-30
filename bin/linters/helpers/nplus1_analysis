@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+NPLUS1_MARKER="/tmp/nplus1_detected"
+NPLUS1_REPORT="/tmp/nplus1_report.txt"
+
+if [ -f "$NPLUS1_MARKER" ]; then
+  n1_details=""
+  [ -f "$NPLUS1_REPORT" ] && n1_details=$(cat "$NPLUS1_REPORT")
+  printf "========================================\n❌ FAILED: N+1 queries detected\n%s\n\n" "$n1_details"
+  exit 1
+else
+  printf "✅ SUCCESS: No N+1 queries detected\n"
+  exit 0
+fi

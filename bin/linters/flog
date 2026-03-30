@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+export FLOG_SCORE=${FLOG_SCORE:-50}
+
+flog_args=()
+paths=()
+
+for arg in "$@"; do
+  if [[ "$arg" == -* ]]; then
+    flog_args+=("$arg")
+  else
+    paths+=("$arg")
+  fi
+done
+
+if [ ${#paths[@]} -eq 0 ]; then
+  paths=(app lib)
+fi
+
+# 1. Use $() to actually capture the pipeline's output into the RESULT variable
+RESULT=$(bundle exec flog "${flog_args[@]}" "${paths[@]}" | awk -v threshold="$FLOG_SCORE" '{ if ($1+0 > threshold) print $0 }' | grep -v ': flog total' | grep -v '#none' || true)
+
+
+# 2. Check if the string is non-empty
+if [ -n "$RESULT" ]; then
+  # RESULT has content, exit with code 1
+  echo "$RESULT"
+  exit 1
+else
+  # RESULT is empty, exit with code 0
+  exit 0
+fi

@@ -1,0 +1,31 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  prepared_statements: false
+  advisory_locks: false
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: "<%= ENV.fetch('DB_HOST', 'localhost') %>"
+  port: "<%= ENV.fetch('DB_PORT', '5432') %>"
+  username: "<%= ENV.fetch('DB_USER', 'postgres') %>"
+  password: "<%= ENV.fetch('DB_PASS', 'password') %>"
+  gssencmode: disable
+  connect_timeout: 5
+  checkout_timeout: 5
+  reaping_frequency: 10
+
+development:
+  primary:
+    <<: *default
+    database: "<%= ENV.fetch('DB_NAME', 'starter') %>_development"
+
+test:
+  primary:
+    <<: *default
+    database: "<%= ENV.fetch('DB_NAME', 'starter') %>_test<%= ENV['TEST_ENV_NUMBER'] %>"
+
+production:
+  primary:
+    <<: *default
+    host: <%= ENV.fetch("DB_PRIMARY_HOST") { ENV.fetch("DB_HOST", "localhost") } %>
+    port: <%= ENV.fetch("DB_PRIMARY_PORT") { ENV.fetch("DB_PORT", "5432") } %>
+    database: <%= ENV.fetch("DB_NAME", "starter") %>_production

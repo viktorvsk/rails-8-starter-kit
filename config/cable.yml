@@ -1,0 +1,8 @@
+development:
+  adapter: anycable
+
+test:
+  adapter: test
+
+production:
+  adapter: anycable

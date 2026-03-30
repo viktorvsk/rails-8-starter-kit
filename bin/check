@@ -1,0 +1,84 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+
+options = {
+  parallel: [],
+  then: []
+}
+
+OptionParser.new do |opts|
+  opts.on("--parallel=LIST", Array) { |list| options[:parallel] = list }
+  opts.on("--then=LIST", Array) { |list| options[:then] = list }
+end.parse!
+
+if options[:parallel].empty? && options[:then].empty?
+  puts "Usage: #{$PROGRAM_NAME} [--parallel=task1,task2] [--then=task3,task4]"
+  exit 1
+end
+
+ENV["SILENT_TESTS"] = "1"
+
+def resolve_cmd(name)
+  paths = [
+    "./bin/linters/#{name}",
+    "./bin/linters/helpers/#{name}"
+  ]
+  # Find an executable path, or default to executing the name directly
+  paths.find { |p| File.executable?(p) } || name
+end
+
+def run_task(name)
+  cmd = resolve_cmd(name)
+  start_time = Time.now
+  
+  output = `DISABLE_SPRING=1 #{cmd} 2>&1`
+  ext_code = $?.exitstatus
+  elapsed = (Time.now - start_time).round
+  success = (ext_code == 0)
+
+  # Check if the script wraps its own output
+  if output.include?("✅ SUCCESS") || output.include?("❌ FAILED")
+    puts output
+  else
+    if success
+      puts "✅ SUCCESS: #{cmd} (#{elapsed}s)"
+    else
+      puts "========================================"
+      puts "❌ FAILED: #{cmd} (#{elapsed}s)"
+      puts output
+      puts ""
+    end
+  end
+  success
+end
+
+threads = []
+results = {}
+mutex = Mutex.new
+
+options[:parallel].each do |task_name|
+  threads << Thread.new do
+    success = run_task(task_name)
+    mutex.synchronize { results[task_name] = success }
+  end
+end
+
+unless options[:then].empty?
+  threads << Thread.new do
+    options[:then].each do |task_name|
+      success = run_task(task_name)
+      mutex.synchronize { results[task_name] = success }
+      break unless success # Stop the sequential chain on failure!
+    end
+  end
+end
+
+threads.each(&:join)
+
+if results.values.any? { |r| !r }
+  exit 1
+else
+  exit 0
+end

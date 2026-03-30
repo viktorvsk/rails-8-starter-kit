@@ -1,0 +1,28 @@
+#!/bin/bash
+export NPLUS1_MARKER_FILE="/tmp/nplus1_detected"
+export NPLUS1_REPORT_FILE="/tmp/nplus1_report.txt"
+export NPLUS1_CHECK=1
+export SPEC_OPTS="--require ./spec/support/nplus1_formatter.rb --format Nplus1Formatter"
+export COVERAGE_FORMAT=json
+export RSPEC_RETRY_NUMBER=${RSPEC_RETRY_NUMBER:-3}
+export SIMPLECOV_PREFIX=nplus1
+
+rm -f "$NPLUS1_MARKER_FILE" "$NPLUS1_REPORT_FILE"
+
+start_time=$SECONDS
+output=$(DISABLE_SPRING=1 ./bin/prspec --format=failures --tag=~integration 2>&1)
+exit_code=$?
+elapsed=$(( SECONDS - start_time ))
+
+specs_count=$(echo "$output" | grep -oE '^[0-9]+ examples,' | tail -n 1 | grep -oE '[0-9]+')
+specs_str=""
+[ -n "$specs_count" ] && specs_str=" ($specs_count specs)"
+
+if [ "$exit_code" -ne 0 ]; then
+  filtered_output=$(echo "$output" | grep -vE '^(JSON Coverage report|Randomized with seed|\{"id":|Run options: exclude|[0-9]+ / [0-9]+ LOC|\s*$)' || true)
+  printf "========================================\n❌ FAILED: ./bin/prspec --format=failures --tag=~integration 2>&1 (%ss)%s\n%s\n\n" "$elapsed" "$specs_str" "$filtered_output"
+  exit $exit_code
+else
+  printf "✅ SUCCESS: ./bin/prspec --format=failures --tag=~integration 2>&1 (%ss)%s\n" "$elapsed" "$specs_str"
+  exit 0
+fi

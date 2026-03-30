@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# Run i18n-tasks health which checks missing, unused, interpolations, and normalization
+bundle exec i18n-tasks health
+exit $?

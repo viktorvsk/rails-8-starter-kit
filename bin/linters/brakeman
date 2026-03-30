@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "rubygems"
+require "bundler/setup"
+
+config_dir = File.expand_path("../../config", __dir__)
+ARGV.unshift(
+  "--no-pager",
+  "--ensure-latest",
+  "--config-file",
+  File.join(config_dir, "brakeman.yml"),
+  "--ignore-config",
+  File.join(config_dir, "brakeman.ignore"),
+)
+
+load Gem.bin_path("brakeman", "brakeman")

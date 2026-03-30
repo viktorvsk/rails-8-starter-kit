@@ -1,0 +1,31 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "rubygems"
+require "bundler/setup"
+require "haml_lint"
+require "haml_lint/cli"
+
+require_relative "../../lib/haml_lint/linter/find_hardcoded_strings"
+
+require "tempfile"
+
+# Write a temporary config to enable only this linter
+config_content = <<~YAML
+  require:
+    - '#{File.expand_path("../../lib/haml_lint/linter/find_hardcoded_strings.rb", __dir__)}'
+  linters:
+    FindHardcodedStrings:
+      enabled: true
+YAML
+
+Tempfile.open([".haml-lint-hardcoded", ".yml"]) do |f|
+  f.write(config_content)
+  f.flush
+
+  args = ARGV.empty? ? ["app/views"] : ARGV
+  args += ["-c", f.path, "--include-linter", "FindHardcodedStrings"]
+
+  success = system("bundle", "exec", "haml-lint", *args)
+  exit success ? 0 : 1
+end
