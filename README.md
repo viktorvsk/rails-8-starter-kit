@@ -1,4 +1,4 @@
-# Rails 8 Starter Kit
+r4# Rails 8 Starter Kit
 
 > A production-grade, AI-native fullstack starter kit for Rails 8.
 > Zero-config Docker. Parallel tests. Real-time WebSockets. Premium dark UI.
@@ -38,8 +38,8 @@ That's it. The `setup` container creates your database, seeds sample data, and t
 ### Docker (recommended)
 
 ```bash
-git clone https://github.com/viktorvsk/rails-8-starter-kit.git
-cd rails-8-starter-kit
+git clone https://github.com/{owner}/rails-8-AI-native-starter-kit.git
+cd rails-8-AI-native-starter-kit
 docker compose up
 ```
 
