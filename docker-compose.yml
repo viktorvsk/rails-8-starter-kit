@@ -99,7 +99,6 @@ services:
       - "8081:8081"
 
   setup:
-    image: rails-8-AI-native-starter-kit-dev
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -113,7 +112,6 @@ services:
       pgbouncer:
         condition: service_started
     volumes:
-      - .:/rails
       - storage:/rails/storage
       - /rails/tmp/cache
     command: bin/setup --skip-server
@@ -125,9 +123,14 @@ services:
       DB_DIRECT_HOST: postgres
       DB_DIRECT_PORT: "5432"
       REDIS_URL: redis://redis:6379/1
+    labels:
+      fibe.gg/github_url: "https://github.com/viktorvsk/rails-8-AI-native-starter-kit"
+      fibe.gg/dockerfile: "Dockerfile.dev"
+      fibe.gg/branch: $$var__branch
+      fibe.gg/source_mount: /rails
+      fibe.gg/env_file: env.example
 
   tests:
-    image: rails-8-AI-native-starter-kit-dev
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -143,7 +146,6 @@ services:
       pgbouncer:
         condition: service_started
     volumes:
-      - .:/rails
       - storage:/rails/storage
       - /rails/tmp/cache
     command: bash -c "bin/setup --skip-server && bin/check-fast"
@@ -155,9 +157,15 @@ services:
       DB_DIRECT_HOST: postgres
       DB_DIRECT_PORT: "5432"
       REDIS_URL: redis://redis:6379/1
+    labels:
+      fibe.gg/github_url: "https://github.com/viktorvsk/rails-8-AI-native-starter-kit"
+      fibe.gg/dockerfile: "Dockerfile.dev"
+      fibe.gg/branch: $$var__branch
+      fibe.gg/source_mount: /rails
+      fibe.gg/env_file: env.example
+
 
   app:
-    image: rails-8-AI-native-starter-kit-dev
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -173,7 +181,6 @@ services:
       pgbouncer:
         condition: service_started
     volumes:
-      - .:/rails
       - storage:/rails/storage
       - /rails/tmp/cache
     ports:
