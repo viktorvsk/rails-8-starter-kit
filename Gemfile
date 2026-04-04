@@ -100,3 +100,5 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
 end
+
+gem "hotwire-livereload", "~> 2.1", group: :development

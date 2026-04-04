@@ -26,7 +26,12 @@ Sidekiq.configure_server do |config|
           "active_job" => true,
         }
       end
-      Sidekiq::Cron::Job.load_from_hash(cron_hash)
+
+      begin
+        Sidekiq::Cron::Job.load_from_hash(cron_hash)
+      rescue RedisClient::CannotConnectError => e
+        Rails.logger.warn("Sidekiq cron: Redis unavailable, skipping schedule load (#{e.message})")
+      end
     end
   end
 end
