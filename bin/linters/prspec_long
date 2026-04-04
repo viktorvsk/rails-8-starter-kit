@@ -10,7 +10,7 @@ export SIMPLECOV_PREFIX=nplus1
 rm -f "$NPLUS1_MARKER_FILE" "$NPLUS1_REPORT_FILE"
 
 start_time=$SECONDS
-output=$(DISABLE_SPRING=1 ./bin/prspec --format=failures --tag=~integration 2>&1)
+output=$(DISABLE_SPRING=1 ./bin/prspec --format=failures 2>&1)
 exit_code=$?
 elapsed=$(( SECONDS - start_time ))
 
@@ -20,9 +20,9 @@ specs_str=""
 
 if [ "$exit_code" -ne 0 ]; then
   filtered_output=$(echo "$output" | grep -vE '^(JSON Coverage report|Randomized with seed|\{"id":|Run options: exclude|[0-9]+ / [0-9]+ LOC|\s*$)' || true)
-  printf "========================================\n❌ FAILED: ./bin/prspec --format=failures --tag=~integration 2>&1 (%ss)%s\n%s\n\n" "$elapsed" "$specs_str" "$filtered_output"
+  printf "========================================\n❌ FAILED: ./bin/prspec --format=failures 2>&1 (%ss)%s\n%s\n\n" "$elapsed" "$specs_str" "$filtered_output"
   exit $exit_code
 else
-  printf "✅ SUCCESS: ./bin/prspec --format=failures --tag=~integration 2>&1 (%ss)%s\n" "$elapsed" "$specs_str"
+  printf "✅ SUCCESS: ./bin/prspec --format=failures 2>&1 (%ss)%s\n" "$elapsed" "$specs_str"
   exit 0
 fi

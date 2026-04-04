@@ -1,6 +1,6 @@
 #!/bin/bash
 start_time=$SECONDS
-output=$(DISABLE_SPRING=1 ./bin/prspec --format=failures --tag=~integration --tag=~slow 2>&1)
+output=$(DISABLE_SPRING=1 ./bin/prspec --format=failures --tag=~slow 2>&1)
 exit_code=$?
 elapsed=$(( SECONDS - start_time ))
 
@@ -10,9 +10,9 @@ specs_str=""
 
 if [ "$exit_code" -ne 0 ]; then
   filtered_output=$(echo "$output" | grep -vE '^(Coverage report|Randomized with seed|\[\{\"id\":)' | sed '/^$/N;/^\n$/D')
-  printf "========================================\n❌ FAILED: ./bin/prspec --format=failures --tag=~integration --tag=~slow 2>&1 (%ss)%s\n%s\n\n" "$elapsed" "$specs_str" "$filtered_output"
+  printf "========================================\n❌ FAILED: ./bin/prspec --format=failures --tag=~slow 2>&1 (%ss)%s\n%s\n\n" "$elapsed" "$specs_str" "$filtered_output"
   exit $exit_code
 else
-  printf "✅ SUCCESS: ./bin/prspec --format=failures --tag=~integration --tag=~slow 2>&1 (%ss)%s\n" "$elapsed" "$specs_str"
+  printf "✅ SUCCESS: ./bin/prspec --format=failures --tag=~slow 2>&1 (%ss)%s\n" "$elapsed" "$specs_str"
   exit 0
 fi
